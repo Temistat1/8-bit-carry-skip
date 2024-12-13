@@ -1,27 +1,33 @@
 /*
- * Copyright (c) 2024 Your Name
+ * Copyright (c) 2024 Temiloluwa Omomuwasan
  * SPDX-License-Identifier: Apache-2.0
  */
 
 `default_nettype none
 
-module tt_um_example (
-    input  wire [7:0] ui_in,    // Dedicated inputs
-    output wire [7:0] uo_out,   // Dedicated outputs
-    input  wire [7:0] uio_in,   // IOs: Input path
-    output wire [7:0] uio_out,  // IOs: Output path
-    output wire [7:0] uio_oe,   // IOs: Enable path (active high: 0=input, 1=output)
-    input  wire       ena,      // always 1 when the design is powered, so you can ignore it
-    input  wire       clk,      // clock
-    input  wire       rst_n     // reset_n - low to reset
+// 8-bit Carry-Skip Adder Design
+
+module carry_skip_adder(
+    input [7:0] A,   // 8-bit input A
+    input [7:0] B,   // 8-bit input B
+    input Cin,       // Carry input
+    output [7:0] Sum, // 8-bit Sum
+    output Cout       // Carry output
 );
+    wire [7:0] P, G; // Propagate and Generate signals
+    wire [2:0] C;    // Intermediate carry signals
 
-  // All output pins must be assigned. If not used, assign to 0.
-  assign uo_out  = ui_in + uio_in;  // Example: ou_out is the sum of ui_in and uio_in
-  assign uio_out = 0;
-  assign uio_oe  = 0;
+    // Generate and Propagate signals
+    assign P = A ^ B; // Propagate: A XOR B
+    assign G = A & B; // Generate: A AND B
 
-  // List all unused inputs to prevent warnings
-  wire _unused = &{ena, clk, rst_n, 1'b0};
+    // Block-wise carry calculation (4-bit blocks)
+    assign C[0] = G[3] | (P[3] & G[2]) | (P[3] & P[2] & G[1]) | (P[3] & P[2] & P[1] & G[0]) | (P[3] & P[2] & P[1] & P[0] & Cin);
+    assign C[1] = G[7] | (P[7] & G[6]) | (P[7] & P[6] & G[5]) | (P[7] & P[6] & P[5] & G[4]) | (P[7] & P[6] & P[5] & P[4] & C[0]);
 
+    // Final carry out
+    assign Cout = C[1];
+
+    // Sum calculation
+    assign Sum = P ^ {C[0], C[0], C[0], C[0], C[0], C[0], C[0], Cin};
 endmodule
